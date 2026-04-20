@@ -44,7 +44,7 @@ if ("IntersectionObserver" in window) {
 if (contactForm) {
   contactForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    alert("Thank you for contacting Mind Path Career. We will get back to you soon.");
+    alert("Thank you for contacting Arivya. We will get back to you soon.");
     contactForm.reset();
   });
 }
