@@ -10,6 +10,8 @@ const feedbackCount = document.getElementById("feedbackCount");
 
 const googleFeedbackFormUrl =
   "https://docs.google.com/forms/d/e/1FAIpQLSce-t8spsLmq8Dpb7nVM_23qDRTmjkmoQPAwA5AYFYQ860LNA/formResponse";
+const googleContactFormUrl =
+  "https://docs.google.com/forms/d/e/1FAIpQLSfTQrlUIpWVTUAcTHO2AZywV35iiZ5agvwwpaREMD9RBxDM5A/formResponse";
 const googleSheetFeedUrl =
   "https://docs.google.com/spreadsheets/d/10W0u194nVp9V--lfQ_ON7BY7_ip8hJtXDA5EvesMFdQ/gviz/tq?gid=479714639";
 const googleFormMetadata = {
@@ -18,6 +20,14 @@ const googleFormMetadata = {
     name: "entry.1294302610",
     city: "entry.1909551288",
     feedback: "entry.1470809729",
+  },
+};
+const googleContactFormMetadata = {
+  fbzx: "-3913238198883300241",
+  fields: {
+    name: "entry.1294302610",
+    phone: "entry.1909551288",
+    message: "entry.1470809729",
   },
 };
 
@@ -218,6 +228,35 @@ function fetchFeedbacks() {
   });
 }
 
+function submitToGoogleForm(url, payload, targetName) {
+  const iframe = document.createElement("iframe");
+  iframe.name = targetName;
+  iframe.hidden = true;
+
+  const form = document.createElement("form");
+  form.action = url;
+  form.method = "POST";
+  form.target = targetName;
+  form.hidden = true;
+
+  payload.forEach((value, key) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(iframe);
+  document.body.appendChild(form);
+  form.submit();
+
+  setTimeout(() => {
+    form.remove();
+    iframe.remove();
+  }, 4000);
+}
+
 async function initializeFeedbackViews() {
   if (!feedbackWall && !feedbackList) {
     return;
@@ -256,10 +295,49 @@ async function initializeFeedbackViews() {
 }
 
 if (contactForm) {
-  contactForm.addEventListener("submit", (event) => {
+  contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    alert("Thank you for contacting Arivya. We will get back to you soon.");
-    contactForm.reset();
+
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const message = document.getElementById("message").value.trim();
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+
+    if (!name || !phone || !message) {
+      return;
+    }
+
+    const payload = new URLSearchParams();
+    payload.append(googleContactFormMetadata.fields.name, name);
+    payload.append(googleContactFormMetadata.fields.phone, phone);
+    payload.append(googleContactFormMetadata.fields.message, message);
+    payload.append("fvv", "1");
+    payload.append("pageHistory", "0");
+    payload.append("fbzx", googleContactFormMetadata.fbzx);
+    payload.append("submissionTimestamp", "-1");
+
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+    }
+
+    try {
+      submitToGoogleForm(
+        googleContactFormUrl,
+        payload,
+        `contact-form-target-${Date.now()}`
+      );
+
+      alert("Thank you for contacting Arivya. We will get back to you soon.");
+      contactForm.reset();
+    } catch (error) {
+      alert("We couldn't submit your message right now. Please try again.");
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit";
+      }
+    }
   });
 }
 
